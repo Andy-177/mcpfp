@@ -84,7 +84,7 @@
                     </div>
                     <div class="flex items-center mb-3" id="gradientOption">
                         <input type="radio" id="gradientBg" name="bgType" value="gradient" class="mr-2">
-                        <label for="gradientBg">渐变背景 (左上角到右下角)</label>
+                        <label for="gradientBg">渐变背景 (300x300专用)</label>
                     </div>
                     <div id="colorPickerContainer" class="mt-3 hidden">
                         <label class="block text-gray-700 mb-2">选择背景颜色</label>
@@ -97,7 +97,7 @@
                         </div>
                     </div>
                     <div id="gradientPickerContainer" class="mt-3 hidden space-y-3">
-                        <label class="block text-gray-700 mb-2">选择渐变颜色</label>
+                        <label class="block text-gray-700 mb-2">选择渐变颜色 (仅300x300可见效果)</label>
                         <div class="flex items-center">
                             <input type="color" id="gradientColor1" value="#ffffff" class="w-10 h-10 border border-gray-300 rounded">
                             <div class="ml-3 flex-1">
@@ -124,9 +124,9 @@
                         <input type="checkbox" id="skinShadow" class="mr-2">
                         <label for="skinShadow">添加皮肤阴影</label>
                     </div>
-                    <div class="flex items-center mb-3">
+                    <div class="flex items-center mb-3" id="dropShadowContainer">
                         <input type="checkbox" id="dropShadow" class="mr-2">
-                        <label for="dropShadow">添加头像阴影</label>
+                        <label for="dropShadow">添加头像阴影 (300x300专用)</label>
                     </div>
                 </div>
                 
@@ -138,11 +138,11 @@
                     <div class="flex flex-col space-y-3">
                         <div class="flex items-center">
                             <input type="radio" id="size300" name="avatarSize" value="300" checked class="mr-2">
-                            <label for="size300">300x300 像素 (标准尺寸)</label>
+                            <label for="size300">300x300 像素 (支持渐变和头像阴影)</label>
                         </div>
                         <div class="flex items-center">
                             <input type="radio" id="size20" name="avatarSize" value="20" class="mr-2">
-                            <label for="size20">20x20 像素 (小尺寸)</label>
+                            <label for="size20">20x20 像素 (仅支持纯色/透明背景)</label>
                         </div>
                     </div>
                 </div>
@@ -223,23 +223,24 @@
         const shadowSettings = document.getElementById('shadowSettings');
         const sizeSettings = document.getElementById('sizeSettings');
         const transparentBg = document.getElementById('transparentBg');
-        const colorBg = document.getElementById('colorBg');
+        const colorBg = document.getElementById('bgColor');
         const gradientBg = document.getElementById('gradientBg');
         const gradientOption = document.getElementById('gradientOption');
         const colorPickerContainer = document.getElementById('colorPickerContainer');
         const gradientPickerContainer = document.getElementById('gradientPickerContainer');
-        const bgColor = document.getElementById('bgColor');
-        const bgHex = document.getElementById('bgHex');
-        const gradientColor1 = document.getElementById('gradientColor1');
-        const gradientHex1 = document.getElementById('gradientHex1');
-        const gradientColor2 = document.getElementById('gradientColor2');
-        const gradientHex2 = document.getElementById('gradientHex2');
-        const skinShadow = document.getElementById('skinShadow');
-        const dropShadow = document.getElementById('dropShadow');
-        const size300 = document.getElementById('size300');
-        const size20 = document.getElementById('size20');
+        const bgColorInput = document.getElementById('bgColor');
+        const bgHexInput = document.getElementById('bgHex');
+        const gradientColor1Input = document.getElementById('gradientColor1');
+        const gradientHex1Input = document.getElementById('gradientHex1');
+        const gradientColor2Input = document.getElementById('gradientColor2');
+        const gradientHex2Input = document.getElementById('gradientHex2');
+        const skinShadowCheckbox = document.getElementById('skinShadow');
+        const dropShadowCheckbox = document.getElementById('dropShadow');
+        const dropShadowContainer = document.getElementById('dropShadowContainer');
+        const size300Radio = document.getElementById('size300');
+        const size20Radio = document.getElementById('size20');
         
-        // 初始化：加载本地阴影图片
+        // 初始化：加载阴影图片
         function loadShadowImages() {
             let loadedCount = 0;
             const totalImages = 2;
@@ -248,29 +249,33 @@
             skinShadowImage = new Image();
             skinShadowImage.crossOrigin = "anonymous";
             skinShadowImage.onload = function() {
+                console.log('皮肤阴影图片加载成功');
                 loadedCount++;
                 checkAllImagesLoaded(loadedCount, totalImages);
             };
             skinShadowImage.onerror = function() {
-                showShadowWarning('无法加载皮肤阴影图片，请确保文件存在');
+                console.error('皮肤阴影图片加载失败');
+                showShadowWarning('皮肤阴影图片加载失败 (skin_shadow.png)');
                 loadedCount++;
                 checkAllImagesLoaded(loadedCount, totalImages);
             };
-            skinShadowImage.src = 'skin_shadow.png?' + new Date().getTime(); // 添加时间戳防止缓存
+            skinShadowImage.src = 'skin_shadow.png?' + new Date().getTime();
             
             // 加载头像阴影图片
             dropShadowImage = new Image();
             dropShadowImage.crossOrigin = "anonymous";
             dropShadowImage.onload = function() {
+                console.log('头像阴影图片加载成功');
                 loadedCount++;
                 checkAllImagesLoaded(loadedCount, totalImages);
             };
             dropShadowImage.onerror = function() {
-                showShadowWarning('无法加载头像阴影图片，请确保文件存在');
+                console.error('头像阴影图片加载失败');
+                showShadowWarning('头像阴影图片加载失败 (shadow.png)');
                 loadedCount++;
                 checkAllImagesLoaded(loadedCount, totalImages);
             };
-            dropShadowImage.src = 'shadow.png?' + new Date().getTime(); // 添加时间戳防止缓存
+            dropShadowImage.src = 'shadow.png?' + new Date().getTime();
         }
         
         // 检查所有阴影图片是否加载完成
@@ -289,18 +294,15 @@
         
         // 处理文件上传
         function handleFileUpload(file) {
-            // 检查文件类型
             if (!file.type.match('image/png')) {
                 showError('请上传PNG格式的图片文件');
                 return false;
             }
             
-            // 读取文件
             const reader = new FileReader();
             reader.onload = function(e) {
                 const img = new Image();
                 img.onload = function() {
-                    // 检查图片尺寸
                     if (img.width !== 64 || img.height !== 64) {
                         showError('图片尺寸必须为64x64像素');
                         skinImage = null;
@@ -308,16 +310,13 @@
                         return;
                     }
                     
-                    // 图片符合要求
                     skinImage = img;
                     showFileInfo(file.name);
                     hideError();
                     
-                    // 显示原始皮肤预览
                     const ctx = originalSkinCanvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, 64, 64);
                     
-                    // 更新UI状态
                     updateUIState();
                 };
                 img.src = e.target.result;
@@ -343,26 +342,32 @@
             fileError.classList.add('hidden');
         }
         
-        // 根据选择的尺寸显示/隐藏渐变选项
-        function updateGradientVisibility() {
-            const isSmallSize = size20.checked;
+        // 根据选择的尺寸更新相关选项的可见性
+        function updateOptionsVisibility() {
+            const isSmallSize = size20Radio.checked;
             
-            // 如果选择小尺寸，隐藏渐变选项并确保选中其他选项
+            // 控制渐变选项可见性
             if (isSmallSize) {
                 gradientOption.classList.add('hidden');
                 gradientPickerContainer.classList.add('hidden');
                 
-                // 如果当前选中的是渐变，自动切换到纯色
                 if (gradientBg.checked) {
                     colorBg.checked = true;
                     colorPickerContainer.classList.remove('hidden');
                 }
             } else {
-                // 大尺寸显示渐变选项
                 gradientOption.classList.remove('hidden');
                 if (gradientBg.checked) {
                     gradientPickerContainer.classList.remove('hidden');
                 }
+            }
+            
+            // 控制头像阴影选项可见性
+            if (isSmallSize) {
+                dropShadowContainer.classList.add('hidden');
+                dropShadowCheckbox.checked = false;
+            } else {
+                dropShadowContainer.classList.remove('hidden');
             }
         }
         
@@ -370,24 +375,19 @@
         function updateUIState() {
             const hasValidSkin = skinImage !== null;
             
-            // 更新按钮状态 - 只有当皮肤和阴影图片都加载完成才能生成
             generateBtn.disabled = !hasValidSkin || !shadowImagesLoaded;
             
-            // 显示/隐藏设置区域
             backgroundSettings.style.display = hasValidSkin ? 'block' : 'none';
             shadowSettings.style.display = hasValidSkin ? 'block' : 'none';
             sizeSettings.style.display = hasValidSkin ? 'block' : 'none';
             
-            // 根据尺寸更新渐变选项可见性
             if (hasValidSkin) {
-                updateGradientVisibility();
+                updateOptionsVisibility();
             }
             
-            // 显示/隐藏预览区域
             originalSkinContainer.style.display = hasValidSkin ? 'block' : 'none';
             stepsContainer.style.display = hasValidSkin ? 'none' : 'block';
             
-            // 如果没有有效皮肤，隐藏结果和下载区域
             if (!hasValidSkin) {
                 resultContainer.style.display = 'none';
                 downloadContainer.style.display = 'none';
@@ -396,20 +396,15 @@
         
         // 解析十六进制颜色
         function parseHex(hex) {
-            // 移除#号（如果存在）
             hex = hex.replace(/^#/, '');
-            
-            // 检查长度是否有效
             if (hex.length !== 6) {
                 return null;
             }
             
-            // 解析RGB值
             const r = parseInt(hex.substring(0, 2), 16);
             const g = parseInt(hex.substring(2, 4), 16);
             const b = parseInt(hex.substring(4, 6), 16);
             
-            // 检查值是否有效
             if (isNaN(r) || isNaN(g) || isNaN(b)) {
                 return null;
             }
@@ -419,49 +414,39 @@
         
         // 同步颜色选择器
         function syncColorInputs() {
-            // 纯色背景颜色同步
-            bgColor.addEventListener('input', () => {
-                const hex = bgColor.value.toUpperCase();
-                bgHex.value = hex;
+            bgColorInput.addEventListener('input', () => {
+                bgHexInput.value = bgColorInput.value.toUpperCase();
             });
             
-            bgHex.addEventListener('input', () => {
-                const hex = bgHex.value.trim();
+            bgHexInput.addEventListener('input', () => {
+                const hex = bgHexInput.value.trim();
                 if (/^#?[0-9A-Fa-f]{6}$/.test(hex)) {
-                    const formattedHex = hex.startsWith('#') ? hex : `#${hex}`;
-                    bgColor.value = formattedHex;
+                    bgColorInput.value = hex.startsWith('#') ? hex : `#${hex}`;
                 }
             });
             
-            // 渐变颜色1同步
-            gradientColor1.addEventListener('input', () => {
-                const hex = gradientColor1.value.toUpperCase();
-                gradientHex1.value = hex;
+            gradientColor1Input.addEventListener('input', () => {
+                gradientHex1Input.value = gradientColor1Input.value.toUpperCase();
             });
             
-            gradientHex1.addEventListener('input', () => {
-                const hex = gradientHex1.value.trim();
+            gradientHex1Input.addEventListener('input', () => {
+                const hex = gradientHex1Input.value.trim();
                 if (/^#?[0-9A-Fa-f]{6}$/.test(hex)) {
-                    const formattedHex = hex.startsWith('#') ? hex : `#${hex}`;
-                    gradientColor1.value = formattedHex;
+                    gradientColor1Input.value = hex.startsWith('#') ? hex : `#${hex}`;
                 }
             });
             
-            // 渐变颜色2同步
-            gradientColor2.addEventListener('input', () => {
-                const hex = gradientColor2.value.toUpperCase();
-                gradientHex2.value = hex;
+            gradientColor2Input.addEventListener('input', () => {
+                gradientHex2Input.value = gradientColor2Input.value.toUpperCase();
             });
             
-            gradientHex2.addEventListener('input', () => {
-                const hex = gradientHex2.value.trim();
+            gradientHex2Input.addEventListener('input', () => {
+                const hex = gradientHex2Input.value.trim();
                 if (/^#?[0-9A-Fa-f]{6}$/.test(hex)) {
-                    const formattedHex = hex.startsWith('#') ? hex : `#${hex}`;
-                    gradientColor2.value = formattedHex;
+                    gradientColor2Input.value = hex.startsWith('#') ? hex : `#${hex}`;
                 }
             });
             
-            // 背景类型切换
             transparentBg.addEventListener('change', () => {
                 colorPickerContainer.classList.add('hidden');
                 gradientPickerContainer.classList.add('hidden');
@@ -473,121 +458,177 @@
             });
             
             gradientBg.addEventListener('change', () => {
-                if (!size20.checked) { // 只有大尺寸才显示渐变选择器
+                if (!size20Radio.checked) {
                     colorPickerContainer.classList.add('hidden');
                     gradientPickerContainer.classList.remove('hidden');
                 }
             });
             
-            // 尺寸选择变化时更新渐变选项可见性
-            size300.addEventListener('change', updateGradientVisibility);
-            size20.addEventListener('change', updateGradientVisibility);
+            size300Radio.addEventListener('change', updateOptionsVisibility);
+            size20Radio.addEventListener('change', updateOptionsVisibility);
         }
         
-        // 分割皮肤并生成头像
+        // 生成头像 - 优化渐变效果
         function generateAvatar() {
-            // 获取选中的尺寸
-            const avatarSize = size300.checked ? 300 : 20;
+            const avatarSize = size300Radio.checked ? 300 : 20;
             
-            // 创建临时画布用于处理
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = 20;
-            tempCanvas.height = 20;
-            const tempCtx = tempCanvas.getContext('2d');
-            
-            // 创建背景
-            if (transparentBg.checked) {
-                // 透明背景
-                tempCtx.clearRect(0, 0, 20, 20);
-            } else if (colorBg.checked || avatarSize === 20) {
-                // 纯色背景（小尺寸强制使用纯色）
-                let rgb = parseHex(bgHex.value) || [255, 255, 255];
-                tempCtx.fillStyle = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
-                tempCtx.fillRect(0, 0, 20, 20);
-            } else if (gradientBg.checked) {
-                // 渐变背景（仅大尺寸支持）
-                const color1 = parseHex(gradientHex1.value) || [255, 255, 255];
-                const color2 = parseHex(gradientHex2.value) || [0, 0, 0];
-                
-                // 创建从左上角到右下角的渐变
-                const gradient = tempCtx.createLinearGradient(0, 0, 20, 20);
-                gradient.addColorStop(0, `rgb(${color1[0]}, ${color1[1]}, ${color1[2]})`);
-                gradient.addColorStop(1, `rgb(${color2[0]}, ${color2[1]}, ${color2[2]})`);
-                
-                tempCtx.fillStyle = gradient;
-                tempCtx.fillRect(0, 0, 20, 20);
-            }
-            
-            // 分割皮肤并绘制各个部分
-            // 侧面脸
-            tempCtx.drawImage(skinImage, 5, 9, 3, 7, 5, 4, 3, 7);
-            // 外面部
-            tempCtx.drawImage(skinImage, 33, 9, 3, 7, 5, 4, 3, 7);
-            
-            // 正面脸
-            tempCtx.drawImage(skinImage, 8, 9, 7, 7, 8, 4, 7, 7);
-            // 外正面脸
-            tempCtx.drawImage(skinImage, 40, 9, 7, 7, 8, 4, 7, 7);
-            
-            // 左手
-            tempCtx.drawImage(skinImage, 37, 52, 2, 7, 13, 13, 2, 7);
-            // 外左手
-            tempCtx.drawImage(skinImage, 53, 52, 2, 7, 13, 13, 2, 7);
-            
-            // 身体
-            const bodyCanvas = document.createElement('canvas');
-            bodyCanvas.width = 8;
-            bodyCanvas.height = 9;
-            const bodyCtx = bodyCanvas.getContext('2d');
-            bodyCtx.drawImage(skinImage, 20, 20, 8, 9, 0, 0, 8, 9);
-            // 编辑身体（移除特定像素）
-            bodyCtx.clearRect(0, 0, 1, 1);  // (0,0)
-            bodyCtx.clearRect(7, 0, 1, 1); // (7,0)
-            tempCtx.drawImage(bodyCanvas, 6, 11, 8, 9);
-            
-            // 外身体
-            const outerBodyCanvas = document.createElement('canvas');
-            outerBodyCanvas.width = 8;
-            outerBodyCanvas.height = 9;
-            const outerBodyCtx = outerBodyCanvas.getContext('2d');
-            outerBodyCtx.drawImage(skinImage, 20, 36, 8, 9, 0, 0, 8, 9);
-            // 编辑外身体
-            outerBodyCtx.clearRect(0, 0, 1, 1);  // (0,0)
-            outerBodyCtx.clearRect(7, 0, 1, 1); // (7,0)
-            tempCtx.drawImage(outerBodyCanvas, 6, 11, 8, 9);
-            
-            // 右手
-            tempCtx.drawImage(skinImage, 45, 20, 2, 7, 5, 13, 2, 7);
-            // 外右手
-            tempCtx.drawImage(skinImage, 45, 36, 2, 7, 5, 13, 2, 7);
-            
-            // 添加皮肤阴影
-            if (skinShadow.checked && skinShadowImage.complete) {
-                tempCtx.drawImage(skinShadowImage, 0, 0, 20, 20);
-            }
-            
-            // 调整结果画布尺寸
-            resultCanvas.width = avatarSize;
-            resultCanvas.height = avatarSize;
-            const resultCtx = resultCanvas.getContext('2d');
-            resultCtx.clearRect(0, 0, avatarSize, avatarSize);
-            resultCtx.imageSmoothingEnabled = false; // 禁用平滑，保持像素风格
-            
-            // 绘制最终结果
+            // 对于300x300尺寸，直接在结果画布上创建渐变背景
             if (avatarSize === 300) {
-                // 放大到300x300
-                resultCtx.drawImage(tempCanvas, 0, 0, 20, 20, 0, 0, 300, 300);
+                resultCanvas.width = 300;
+                resultCanvas.height = 300;
+                const resultCtx = resultCanvas.getContext('2d');
+                resultCtx.clearRect(0, 0, 300, 300);
+                resultCtx.imageSmoothingEnabled = false;
                 
-                // 添加头像阴影
-                if (dropShadow.checked && dropShadowImage.complete) {
-                    // 先保存当前结果，然后在下方绘制阴影，再绘制结果
-                    const tempResult = resultCtx.getImageData(0, 0, 300, 300);
-                    resultCtx.drawImage(dropShadowImage, 0, 0, 300, 300);
-                    resultCtx.putImageData(tempResult, 0, 0);
+                // 1. 绘制背景 (300x300尺寸专用处理)
+                if (transparentBg.checked) {
+                    // 透明背景
+                    resultCtx.clearRect(0, 0, 300, 300);
+                } else if (colorBg.checked) {
+                    // 纯色背景
+                    let rgb = parseHex(bgHexInput.value) || [255, 255, 255];
+                    resultCtx.fillStyle = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+                    resultCtx.fillRect(0, 0, 300, 300);
+                } else if (gradientBg.checked) {
+                    // 渐变背景 (300x300尺寸专用)
+                    const color1 = parseHex(gradientHex1Input.value) || [255, 255, 255];
+                    const color2 = parseHex(gradientHex2Input.value) || [0, 0, 0];
+                    
+                    // 创建从左上角到右下角的渐变，应用于整个300x300画布
+                    const gradient = resultCtx.createLinearGradient(0, 0, 300, 300);
+                    gradient.addColorStop(0, `rgb(${color1[0]}, ${color1[1]}, ${color1[2]})`);
+                    gradient.addColorStop(1, `rgb(${color2[0]}, ${color2[1]}, ${color2[2]})`);
+                    
+                    resultCtx.fillStyle = gradient;
+                    resultCtx.fillRect(0, 0, 300, 300);
                 }
+                
+                // 2. 绘制头像阴影 (如果启用)
+                if (dropShadowCheckbox.checked && dropShadowImage && dropShadowImage.complete) {
+                    console.log('应用头像阴影');
+                    resultCtx.drawImage(dropShadowImage, 0, 0, 300, 300);
+                }
+                
+                // 3. 创建20x20的皮肤内容
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = 20;
+                tempCanvas.height = 20;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.clearRect(0, 0, 20, 20);
+                
+                // 绘制皮肤各个部分
+                // 侧面脸
+                tempCtx.drawImage(skinImage, 5, 9, 3, 7, 5, 4, 3, 7);
+                // 外面部
+                tempCtx.drawImage(skinImage, 33, 9, 3, 7, 5, 4, 3, 7);
+                
+                // 正面脸
+                tempCtx.drawImage(skinImage, 8, 9, 7, 7, 8, 4, 7, 7);
+                // 外正面脸
+                tempCtx.drawImage(skinImage, 40, 9, 7, 7, 8, 4, 7, 7);
+                
+                // 左手
+                tempCtx.drawImage(skinImage, 37, 52, 2, 7, 13, 13, 2, 7);
+                // 外左手
+                tempCtx.drawImage(skinImage, 53, 52, 2, 7, 13, 13, 2, 7);
+                
+                // 身体
+                const bodyCanvas = document.createElement('canvas');
+                bodyCanvas.width = 8;
+                bodyCanvas.height = 9;
+                const bodyCtx = bodyCanvas.getContext('2d');
+                bodyCtx.drawImage(skinImage, 20, 20, 8, 9, 0, 0, 8, 9);
+                bodyCtx.clearRect(0, 0, 1, 1);  // (0,0)
+                bodyCtx.clearRect(7, 0, 1, 1); // (7,0)
+                tempCtx.drawImage(bodyCanvas, 6, 11, 8, 9);
+                
+                // 外身体
+                const outerBodyCanvas = document.createElement('canvas');
+                outerBodyCanvas.width = 8;
+                outerBodyCanvas.height = 9;
+                const outerBodyCtx = outerBodyCanvas.getContext('2d');
+                outerBodyCtx.drawImage(skinImage, 20, 36, 8, 9, 0, 0, 8, 9);
+                outerBodyCtx.clearRect(0, 0, 1, 1);  // (0,0)
+                outerBodyCtx.clearRect(7, 0, 1, 1); // (7,0)
+                tempCtx.drawImage(outerBodyCanvas, 6, 11, 8, 9);
+                
+                // 右手
+                tempCtx.drawImage(skinImage, 45, 20, 2, 7, 5, 13, 2, 7);
+                // 外右手
+                tempCtx.drawImage(skinImage, 45, 36, 2, 7, 5, 13, 2, 7);
+                
+                // 添加皮肤阴影
+                if (skinShadowCheckbox.checked && skinShadowImage && skinShadowImage.complete) {
+                    console.log('应用皮肤阴影');
+                    tempCtx.globalCompositeOperation = 'source-over';
+                    tempCtx.drawImage(skinShadowImage, 0, 0, 20, 20);
+                }
+                
+                // 4. 将20x20皮肤内容放大绘制到300x300结果画布上
+                resultCtx.globalCompositeOperation = 'source-over';
+                resultCtx.drawImage(tempCanvas, 0, 0, 20, 20, 0, 0, 300, 300);
             } else {
-                // 保持20x20
-                resultCtx.drawImage(tempCanvas, 0, 0, 20, 20);
+                // 对于20x20尺寸，使用简单处理
+                resultCanvas.width = 20;
+                resultCanvas.height = 20;
+                const resultCtx = resultCanvas.getContext('2d');
+                resultCtx.clearRect(0, 0, 20, 20);
+                resultCtx.imageSmoothingEnabled = false;
+                
+                // 1. 绘制背景 (仅纯色或透明)
+                if (!transparentBg.checked) {
+                    let rgb = parseHex(bgHexInput.value) || [255, 255, 255];
+                    resultCtx.fillStyle = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+                    resultCtx.fillRect(0, 0, 20, 20);
+                }
+                
+                // 2. 绘制皮肤各个部分
+                // 侧面脸
+                resultCtx.drawImage(skinImage, 5, 9, 3, 7, 5, 4, 3, 7);
+                // 外面部
+                resultCtx.drawImage(skinImage, 33, 9, 3, 7, 5, 4, 3, 7);
+                
+                // 正面脸
+                resultCtx.drawImage(skinImage, 8, 9, 7, 7, 8, 4, 7, 7);
+                // 外正面脸
+                resultCtx.drawImage(skinImage, 40, 9, 7, 7, 8, 4, 7, 7);
+                
+                // 左手
+                resultCtx.drawImage(skinImage, 37, 52, 2, 7, 13, 13, 2, 7);
+                // 外左手
+                resultCtx.drawImage(skinImage, 53, 52, 2, 7, 13, 13, 2, 7);
+                
+                // 身体
+                const bodyCanvas = document.createElement('canvas');
+                bodyCanvas.width = 8;
+                bodyCanvas.height = 9;
+                const bodyCtx = bodyCanvas.getContext('2d');
+                bodyCtx.drawImage(skinImage, 20, 20, 8, 9, 0, 0, 8, 9);
+                bodyCtx.clearRect(0, 0, 1, 1);  // (0,0)
+                bodyCtx.clearRect(7, 0, 1, 1); // (7,0)
+                resultCtx.drawImage(bodyCanvas, 6, 11, 8, 9);
+                
+                // 外身体
+                const outerBodyCanvas = document.createElement('canvas');
+                outerBodyCanvas.width = 8;
+                outerBodyCanvas.height = 9;
+                const outerBodyCtx = outerBodyCanvas.getContext('2d');
+                outerBodyCtx.drawImage(skinImage, 20, 36, 8, 9, 0, 0, 8, 9);
+                outerBodyCtx.clearRect(0, 0, 1, 1);  // (0,0)
+                outerBodyCtx.clearRect(7, 0, 1, 1); // (7,0)
+                resultCtx.drawImage(outerBodyCanvas, 6, 11, 8, 9);
+                
+                // 右手
+                resultCtx.drawImage(skinImage, 45, 20, 2, 7, 5, 13, 2, 7);
+                // 外右手
+                resultCtx.drawImage(skinImage, 45, 36, 2, 7, 5, 13, 2, 7);
+                
+                // 3. 添加皮肤阴影
+                if (skinShadowCheckbox.checked && skinShadowImage && skinShadowImage.complete) {
+                    console.log('应用皮肤阴影');
+                    resultCtx.globalCompositeOperation = 'source-over';
+                    resultCtx.drawImage(skinShadowImage, 0, 0, 20, 20);
+                }
             }
             
             // 设置下载文件名
@@ -613,7 +654,6 @@
             }
         });
         
-        // 拖放功能
         dropArea.addEventListener('dragover', (e) => {
             e.preventDefault();
             dropArea.classList.add('border-primary');
@@ -632,7 +672,6 @@
             }
         });
         
-        // 生成按钮
         generateBtn.addEventListener('click', generateAvatar);
         
         // 初始化颜色输入同步
